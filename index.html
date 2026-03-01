@@ -333,6 +333,22 @@
       --md-elevated-button-label-text-color: var(--md-sys-color-on-primary);
     }
 
+    md-filled-button {
+      --md-filled-button-container-height: 44px;
+      --md-filled-button-label-text-size: 1rem;
+      --md-filled-button-container-color: var(--md-sys-color-primary);
+      --md-filled-button-label-text-color: var(--md-sys-color-on-primary);
+    }
+
+    md-filled-button::part(button) {
+      padding: 0 24px !important;
+    }
+
+    [data-theme="dark"] md-filled-button {
+      --md-filled-button-container-color: var(--md-sys-color-primary);
+      --md-filled-button-label-text-color: var(--md-sys-color-on-primary);
+    }
+
     /* Metrics */
     .metrics-grid {
       display: grid;
@@ -788,10 +804,10 @@
         <p>Track pharmaceutical & life sciences deals globally with AI-powered insights</p>
       </div>
       <div class="page-header-action">
-        <md-elevated-button onclick="window.fetchDeals()" style="margin-bottom: 0.5rem;">
+        <md-filled-button onclick="window.fetchDeals()" style="margin-bottom: 0.5rem;">
           <md-icon slot="icon">dashboard_customize</md-icon>
           Generate Dashboard
-        </md-elevated-button>
+        </md-filled-button>
       </div>
     </div>
 
