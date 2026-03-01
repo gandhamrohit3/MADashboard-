@@ -210,6 +210,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize pie charts with default values
   window.updateChart(0, 0);
   window.updateGeoChart({ 'N/A': 1 });
+
+  // Auto-fetch deals on page load with default filters
+  window.fetchDeals();
 });
 
 // Update date range based on deal type (Confirmed vs Rumors)
