@@ -133,23 +133,32 @@ export async function fetchGoogleNewsRSS(searchQuery) {
     
     console.log('Fetching from Google News RSS:', rssUrl);
     
-    // Try multiple CORS proxies
+    // Try multiple CORS proxies - ordered by reliability
     const proxies = [
+      // Primary proxies (most reliable)
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`,
       `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(rssUrl)}`,
+      `https://thingproxy.freeboard.io/fetch/${rssUrl}`,
       `https://cors-anywhere.herokuapp.com/${rssUrl}`,
-      // Fallback to direct fetch (may fail but worth trying)
-      rssUrl
     ];
     
     let lastError = null;
     
     for (const corsUrl of proxies) {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        console.log(`Trying proxy: ${corsUrl.substring(0, 60)}...`);
+        
         const response = await fetch(corsUrl, {
+          signal: controller.signal,
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
           }
         });
+        
+        clearTimeout(timeoutId);
         
         if (!response.ok) {
           lastError = new Error(`HTTP error! status: ${response.status}`);
@@ -157,15 +166,28 @@ export async function fetchGoogleNewsRSS(searchQuery) {
         }
         
         let xmlString;
-        const contentType = response.headers.get('content-type');
+        const contentType = response.headers.get('content-type') || '';
         
-        if (corsUrl.includes('codetabs')) {
-          // codetabs returns JSON
-          const data = await response.json();
-          xmlString = data.contents || data;
+        if (corsUrl.includes('allorigins') || corsUrl.includes('thingproxy')) {
+          // These return plain text
+          xmlString = await response.text();
+        } else if (corsUrl.includes('codetabs')) {
+          // codetabs returns JSON with contents property
+          try {
+            const data = await response.json();
+            xmlString = data.contents || data;
+          } catch {
+            xmlString = await response.text();
+          }
         } else {
           // Others return XML/text directly
           xmlString = await response.text();
+        }
+        
+        // Validate XML before parsing
+        if (!xmlString || xmlString.length < 100) {
+          lastError = new Error('Invalid or empty response');
+          continue;
         }
         
         const parser = new DOMParser();
@@ -179,16 +201,15 @@ export async function fetchGoogleNewsRSS(searchQuery) {
         const deals = parseRSSItems(xmlDoc);
         console.log('Successfully fetched', deals.length, 'deals from Google News RSS');
         
-        // Return deals or mock data if empty
-        if (deals.length === 0) {
-          console.log('No deals found from RSS, using mock data');
-          return getMockDeals(8);
+        // Return deals if we got any
+        if (deals.length > 0) {
+          return deals;
         }
         
-        return deals;
+        lastError = new Error('No deals parsed from RSS feed');
       } catch (proxyError) {
         lastError = proxyError;
-        console.warn(`Proxy ${corsUrl.substring(0, 50)}... failed:`, proxyError.message);
+        console.warn(`Proxy failed:`, proxyError.message);
         continue;
       }
     }
@@ -223,12 +244,27 @@ function parseRSSItems(xmlDoc) {
   
   console.log('Found', items.length, 'items in RSS feed');
   
-  for (let i = 0; i < Math.min(items.length, 30); i++) {
+  // Keywords that indicate a pharmaceutical deal
+  const dealKeywords = [
+    'acquir', 'buy', 'merge', 'deal', 'acquisition', 'purchase', 'patent',
+    'license', 'partner', 'collaboration', 'agreement', 'announce', 'FDA',
+    'approval', 'clinical trial', 'invest', 'fund', 'raise'
+  ];
+  
+  for (let i = 0; i < Math.min(items.length, 50); i++) {
     const item = items[i];
     const title = item.getElementsByTagName('title')[0]?.textContent || '';
     const description = item.getElementsByTagName('description')[0]?.textContent || '';
     const link = item.getElementsByTagName('link')[0]?.textContent || '';
     const pubDate = item.getElementsByTagName('pubDate')[0]?.textContent || new Date().toISOString();
+    
+    // Check if article is likely about a deal
+    const combinedText = (title + ' ' + description).toLowerCase();
+    const isDealRelated = dealKeywords.some(keyword => combinedText.includes(keyword));
+    
+    if (!isDealRelated) {
+      continue; // Skip articles that don't seem deal-related
+    }
     
     const deal = parseArticleToDeal(title, description, link, pubDate);
     if (deal && deal.acquirer !== 'Unnamed Company') {
@@ -236,6 +272,7 @@ function parseRSSItems(xmlDoc) {
     }
   }
   
+  console.log('Parsed', deals.length, 'deals from RSS items');
   return deals;
 }
 
