@@ -4,8 +4,6 @@
  */
 
 const https = require('https');
-const http = require('http');
-const { URL } = require('url');
 
 // Cache to avoid hitting Google News too frequently
 let cache = {
@@ -19,18 +17,25 @@ let cache = {
  */
 function fetchRSSFeed(url) {
   return new Promise((resolve, reject) => {
-    const protocol = url.startsWith('https') ? https : http;
-    
-    const request = protocol.get(url, {
+    const options = {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/atom+xml, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
       },
-      timeout: 15000
-    }, (response) => {
+      timeout: 20000
+    };
+    
+    const request = https.get(url, options, (response) => {
       let data = '';
+      
+      console.log(`[news-proxy] Response status: ${response.statusCode}`);
       
       // Handle redirects
       if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+        console.log(`[news-proxy] Following redirect to: ${response.headers.location}`);
         return fetchRSSFeed(response.headers.location).then(resolve).catch(reject);
       }
       
@@ -44,11 +49,16 @@ function fetchRSSFeed(url) {
       });
       
       response.on('end', () => {
+        console.log(`[news-proxy] Received ${data.length} bytes`);
         resolve(data);
       });
     });
     
-    request.on('error', reject);
+    request.on('error', (error) => {
+      console.error(`[news-proxy] Request error: ${error.message}`);
+      reject(error);
+    });
+    
     request.on('timeout', () => {
       request.destroy();
       reject(new Error('Request timeout'));
@@ -204,22 +214,23 @@ exports.handler = async (event, context) => {
     // Check cache
     const now = Date.now();
     if (cache.data && (now - cache.timestamp) < cache.ttl) {
-      console.log('Returning cached data');
+      console.log('[news-proxy] Returning cached data');
       return {
         statusCode: 200,
         headers,
         body: JSON.stringify({
           source: 'cache',
           items: cache.data,
-          count: cache.data.length
+          count: cache.data.length,
+          timestamp: new Date(cache.timestamp).toISOString()
         })
       };
     }
     
-    // Build Google News RSS URL
-    const googleNewsUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(searchQuery)}`;
+    // Build Google News RSS URL - Direct feed (free, no API key required)
+    const googleNewsUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(searchQuery)}&hl=en-US&gl=US&ceid=US:en`;
     
-    console.log('Fetching from:', googleNewsUrl);
+    console.log(`[news-proxy] Fetching from Google News RSS: ${googleNewsUrl}`);
     
     // Fetch RSS feed
     const rssData = await fetchRSSFeed(googleNewsUrl);
@@ -234,17 +245,18 @@ exports.handler = async (event, context) => {
     cache.data = deals;
     cache.timestamp = now;
     
-    console.log(`Found ${deals.length} deals`);
+    console.log(`[news-proxy] ✓ Success: Found ${deals.length} pharmaceutical deals`);
     
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        source: 'google-news-rss',
+        source: 'google-news-rss-live',
         items: deals,
         count: deals.length,
         query: searchQuery,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        message: `Successfully fetched ${deals.length} deals from Google News RSS`
       })
     };
     
