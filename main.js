@@ -47,6 +47,13 @@ window.updateChart = function(confirmedCount, rumorsCount) {
       options: {
         responsive: true,
         maintainAspectRatio: true,
+        onClick: (event, elements) => {
+          if (elements.length > 0) {
+            const index = elements[0].index;
+            const dealType = index === 0 ? 'confirmed' : 'rumors';
+            window.updateDateRangeForDealType(dealType);
+          }
+        },
         plugins: {
           legend: {
             position: 'bottom',
@@ -71,7 +78,8 @@ window.updateChart = function(confirmedCount, rumorsCount) {
             displayColors: true,
             callbacks: {
               label: function(context) {
-                return context.label + ': ' + context.parsed;
+                const type = context.dataIndex === 0 ? 'Confirmed' : 'Rumors';
+                return type + ': ' + context.parsed;
               }
             }
           }
@@ -120,6 +128,13 @@ window.updateGeoChart = function(geoData) {
       options: {
         responsive: true,
         maintainAspectRatio: true,
+        onClick: (event, elements) => {
+          if (elements.length > 0) {
+            const index = elements[0].index;
+            const continent = Object.keys(geoData)[index];
+            window.updateDateRangeForContinent(continent);
+          }
+        },
         plugins: {
           legend: {
             position: 'bottom',
@@ -196,6 +211,63 @@ document.addEventListener('DOMContentLoaded', () => {
   window.updateChart(0, 0);
   window.updateGeoChart({ 'N/A': 1 });
 });
+
+// Update date range based on deal type (Confirmed vs Rumors)
+window.updateDateRangeForDealType = function(dealType) {
+  const dateFrom = document.getElementById('dateFrom');
+  const dateTo = document.getElementById('dateTo');
+  
+  if (!dateFrom || !dateTo) return;
+
+  const today = new Date();
+  
+  if (dealType === 'confirmed') {
+    // Show last 60 days for confirmed deals
+    const sixtyDaysAgo = new Date(today);
+    sixtyDaysAgo.setDate(today.getDate() - 60);
+    dateFrom.value = sixtyDaysAgo.toISOString().split('T')[0];
+    dateTo.value = today.toISOString().split('T')[0];
+  } else {
+    // Show last 7 days for rumors
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
+    dateFrom.value = sevenDaysAgo.toISOString().split('T')[0];
+    dateTo.value = today.toISOString().split('T')[0];
+  }
+  
+  // Optional: Automatically fetch deals with the new date range
+  console.log(`Updated date range for ${dealType} deals`);
+}
+
+// Update date range based on selected continent
+window.updateDateRangeForContinent = function(continent) {
+  const dateFrom = document.getElementById('dateFrom');
+  const dateTo = document.getElementById('dateTo');
+  
+  if (!dateFrom || !dateTo) return;
+
+  const today = new Date();
+  const continentDays = {
+    'North America': 45,
+    'Europe': 50,
+    'Asia Pacific': 55,
+    'Latin America': 60,
+    'Middle East': 65,
+    'Africa': 70,
+    'Global': 30,
+    'Other': 40
+  };
+
+  const daysBack = continentDays[continent] || 30;
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() - daysBack);
+  
+  dateFrom.value = startDate.toISOString().split('T')[0];
+  dateTo.value = today.toISOString().split('T')[0];
+  
+  // Optional: Show feedback to user
+  console.log(`Updated date range for ${continent}: last ${daysBack} days`);
+}
 
 window.setLoading = function (on) {
   document.getElementById('fetchBtn').disabled = on;
