@@ -130,16 +130,18 @@ const MOCK_DEALS = [
 export async function fetchGoogleNewsRSS(searchQuery) {
   try {
     // Use Netlify function for server-side fetching (no CORS issues)
-    const netlifyApiUrl = process.env.NODE_ENV === 'production' 
+    // On Netlify, use relative path. On localhost, use full URL
+    const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    const netlifyApiUrl = isProduction 
       ? '/.netlify/functions/news-proxy'
       : 'http://localhost:5174/.netlify/functions/news-proxy';
     
     const url = `${netlifyApiUrl}?query=${encodeURIComponent(searchQuery)}`;
     
-    console.log('Fetching from Netlify backend:', url);
+    console.log(`[API] Fetching from backend (${isProduction ? 'production' : 'local'}):`, url);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
     
     const response = await fetch(url, {
       signal: controller.signal,
@@ -151,33 +153,48 @@ export async function fetchGoogleNewsRSS(searchQuery) {
     clearTimeout(timeoutId);
     
     if (!response.ok) {
+      console.error(`[API] Backend error: ${response.status} ${response.statusText}`);
       throw new Error(`Backend error: ${response.status}`);
     }
     
     const data = await response.json();
+    console.log(`[API] Backend response:`, data);
     
     if (!data.items || data.items.length === 0) {
-      console.log('No deals from backend, falling back to mock data');
+      console.log('[API] No deals from backend, falling back to mock data');
       return getMockDeals(8);
     }
     
     // Convert backend items to our format
-    const deals = data.items.map(item => ({
-      acquirer: item.acquirer || 'Unnamed Company',
-      target: item.target || 'Unnamed Target',
-      summary: item.description || item.title,
-      source: item.source || 'Google News',
-      sourceUrl: item.link || '#',
-      date: formatDate(item.pubDate),
-      reliability: 3,
-      geography: item.geography || 'Global',
-      continent: item.continent || 'Global',
-      country: item.country || 'Global',
-      dealType: item.dealType || 'Acquisition',
-      value: item.value || ''
-    }));
+    const deals = data.items.map(item => {
+      // Ensure company names are properly formatted
+      let acquirer = item.acquirer && item.acquirer !== 'Unnamed Company' 
+        ? item.acquirer 
+        : null;
+      let target = item.target && item.target !== 'Unnamed Target' 
+        ? item.target 
+        : null;
+      
+      return {
+        acquirer: acquirer || 'Unnamed Company',
+        target: target || 'Unnamed Target',
+        summary: item.description || item.title || '',
+        source: item.source || 'Google News',
+        sourceUrl: item.link || '#',
+        date: formatDate(item.pubDate),
+        reliability: 3,
+        geography: item.geography || 'Global',
+        continent: item.continent || 'Global',
+        country: item.country || 'Global',
+        dealType: item.dealType || 'Acquisition',
+        value: item.value || '',
+        title: item.title || ''
+      };
+    });
     
-    console.log(`Successfully fetched ${deals.length} deals from backend`);
+    console.log(`[API] Successfully fetched and converted ${deals.length} deals from backend`);
+    deals.forEach(d => console.log(`[API]   - ${d.acquirer} ${d.dealType.toLowerCase()} ${d.target}`));
+
     return deals;
     
   } catch (error) {

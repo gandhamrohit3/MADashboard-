@@ -235,12 +235,15 @@ function extractDealInfo(article) {
   
   console.log(`[news-proxy] Deal info - Acquirer: "${acquirer}", Target: "${target}", Type: "${dealType}"`);
   
-
   return {
+    title: article.title,
+    description: article.description,
+    link: article.link,
+    pubDate: article.pubDate,
+    source: article.source,
     acquirer: acquirer || 'Unnamed Company',
     target: target || 'Unnamed Target',
-    dealType,
-    ...article
+    dealType
   };
 }
 
