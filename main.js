@@ -10,9 +10,9 @@ import '@material/web/elevation/elevation.js';
 import '@material/web/progress/circular-progress.js';
 import '@material/web/switch/switch.js';
 import { fetchGoogleNewsRSS, buildSearchQuery, categorizeDeal } from './api.js';
-
-// Global chart instance
+// Global chart instances
 let dealChart = null;
+let geoChart = null;
 
 // Initialize and update pie chart
 window.updateChart = function(confirmedCount, rumorsCount) {
@@ -21,8 +21,8 @@ window.updateChart = function(confirmedCount, rumorsCount) {
 
   // Get theme colors from CSS variables
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const primaryColor = isDark ? '#84f7e0' : '#006b5b';
-  const secondaryColor = isDark ? '#b0ccc7' : '#4a635f';
+  const primaryColor = isDark ? '#80cbc4' : '#004d40';
+  const secondaryColor = isDark ? '#b8ddd7' : '#3d534d';
 
   const chartData = {
     labels: [`Confirmed Deals (${confirmedCount})`, `Rumors & Signals (${rumorsCount})`],
@@ -30,8 +30,8 @@ window.updateChart = function(confirmedCount, rumorsCount) {
       data: [confirmedCount, rumorsCount],
       backgroundColor: [primaryColor, secondaryColor],
       borderColor: isDark 
-        ? ['#104a43', '#2d3c39']
-        : ['#005048', '#3a4d4a'],
+        ? ['#004d40', '#1a3735']
+        : ['#002a22', '#2a403c'],
       borderWidth: 2,
       borderRadius: 4,
     }]
@@ -51,7 +51,7 @@ window.updateChart = function(confirmedCount, rumorsCount) {
           legend: {
             position: 'bottom',
             labels: {
-              color: isDark ? '#e3e3e3' : '#333333',
+              color: isDark ? '#e0e3e3' : '#191c1c',
               font: {
                 family: '"Roboto", sans-serif',
                 size: 13,
@@ -62,10 +62,83 @@ window.updateChart = function(confirmedCount, rumorsCount) {
             }
           },
           tooltip: {
-            backgroundColor: isDark ? 'rgba(32, 32, 32, 0.95)' : 'rgba(245, 245, 245, 0.95)',
-            titleColor: isDark ? '#ffffff' : '#000000',
-            bodyColor: isDark ? '#e3e3e3' : '#333333',
-            borderColor: isDark ? '#454545' : '#e0e0e0',
+            backgroundColor: isDark ? 'rgba(15, 20, 21, 0.95)' : 'rgba(248, 249, 249, 0.95)',
+            titleColor: isDark ? '#e0e3e3' : '#191c1c',
+            bodyColor: isDark ? '#e0e3e3' : '#191c1c',
+            borderColor: isDark ? '#3f4947' : '#dce4e2',
+            borderWidth: 1,
+            padding: 12,
+            displayColors: true,
+            callbacks: {
+              label: function(context) {
+                return context.label + ': ' + context.parsed;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+}
+
+// Initialize and update geographical chart
+window.updateGeoChart = function(geoData) {
+  const ctx = document.getElementById('geoChart')?.getContext('2d');
+  if (!ctx) return;
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  
+  // Color palette for regions
+  const colors = [
+    isDark ? '#80cbc4' : '#004d40',
+    isDark ? '#b8ddd7' : '#3d534d',
+    isDark ? '#a8d5b0' : '#2d5a47',
+    isDark ? '#ffb4a9' : '#a2271b',
+    isDark ? '#b3c7d5' : '#2c4a6a',
+  ];
+
+  const chartData = {
+    labels: Object.keys(geoData),
+    datasets: [{
+      data: Object.values(geoData),
+      backgroundColor: colors.slice(0, Object.keys(geoData).length),
+      borderColor: isDark
+        ? ['#004d40', '#1a3735', '#134d38', '#5f1b16', '#1a2d3d']
+        : ['#002a22', '#2a403c', '#1a3d2e', '#7a1810', '#1a2d47'],
+      borderWidth: 2,
+      borderRadius: 4,
+    }]
+  };
+
+  if (geoChart) {
+    geoChart.data = chartData;
+    geoChart.update();
+  } else {
+    geoChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: chartData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: isDark ? '#e0e3e3' : '#191c1c',
+              font: {
+                family: '"Roboto", sans-serif',
+                size: 13,
+                weight: '500'
+              },
+              padding: 16,
+              usePointStyle: true,
+            }
+          },
+          tooltip: {
+            backgroundColor: isDark ? 'rgba(15, 20, 21, 0.95)' : 'rgba(248, 249, 249, 0.95)',
+            titleColor: isDark ? '#e0e3e3' : '#191c1c',
+            bodyColor: isDark ? '#e0e3e3' : '#191c1c',
+            borderColor: isDark ? '#3f4947' : '#dce4e2',
             borderWidth: 1,
             padding: 12,
             displayColors: true,
@@ -119,8 +192,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Initialize pie chart with default values
+  // Initialize pie charts with default values
   window.updateChart(0, 0);
+  window.updateGeoChart({ 'N/A': 1 });
 });
 
 window.setLoading = function (on) {
@@ -305,6 +379,34 @@ window.fetchDeals = async function () {
 
     // Update pie chart with new data
     window.updateChart(confirmed.length, rumors.length);
+
+    // Extract and update geographical distribution
+    const allDeals = [...confirmed, ...rumors];
+    const geoCount = {};
+    allDeals.forEach(deal => {
+      if (deal.geography) {
+        geoCount[deal.geography] = (geoCount[deal.geography] || 0) + 1;
+      }
+    });
+
+    // Sort by count and take top 5
+    const topGeos = Object.entries(geoCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .reduce((acc, [geo, count]) => {
+        acc[geo] = count;
+        return acc;
+      }, {});
+
+    // Add "Other" category if there are more than 5
+    if (Object.entries(geoCount).length > 5) {
+      const otherCount = Object.entries(geoCount)
+        .slice(5)
+        .reduce((sum, [, count]) => sum + count, 0);
+      topGeos['Other'] = otherCount;
+    }
+
+    window.updateGeoChart(topGeos);
   } catch (err) {
     console.error(err);
     ['confirmedList', 'rumorsList'].forEach(id => {
