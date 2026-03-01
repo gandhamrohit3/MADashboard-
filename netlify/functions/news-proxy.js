@@ -146,38 +146,96 @@ function parseRSSFeed(xmlString) {
  * Extract company names and deal info from title
  */
 function extractDealInfo(article) {
-  const title = article.title.toLowerCase();
+  const title = article.title;
+  const titleLower = title.toLowerCase();
   
-  // Common pharmaceutical companies
+  // Common pharmaceutical companies (comprehensive list)
   const pharmaCompanies = [
     'pfizer', 'merck', 'johnson & johnson', 'j&j', 'eli lilly', 'roche', 'novartis',
     'astrazeneca', 'bristol myers', 'amgen', 'gilead', 'regeneron', 'vertex',
-    'incyte', 'moderna', 'biontech', 'seagen', 'dexcom', 'allergan', 'allergan',
-    'celgene', 'takeda', 'astellas', 'bayer', 'sanofi', 'abbott', 'boehringer'
+    'incyte', 'moderna', 'biontech', 'seagen', 'dexcom', 'allergan',
+    'celgene', 'takeda', 'astellas', 'bayer', 'sanofi', 'abbott', 'boehringer',
+    'abbvie', 'alexion', 'bluebird', 'coherus', 'crispr', 'editas', 'endo',
+    'halozyme', 'horizon', 'intra-cellular', 'jounce', 'kura', 'morphic',
+    'mylan', 'nektar', 'oncobiologics', 'ormat', 'palatin', 'pieris',
+    'reata', 'sangamo', 'sutro', 'syndax', 'turn', 'ultragenyx', 'viant',
+    'xencor', 'zaryte', 'aduro', 'aytu', 'bellicum', 'cardium', 'cytokinetics',
+    'exelixis', 'gritstone', 'humacyte', 'ionis', 'jounce', 'kaleido', 'ligand'
   ];
   
   let acquirer = null;
   let target = null;
   
-  // Try to find company pairs
-  for (const company of pharmaCompanies) {
-    if (title.includes(company)) {
-      if (!acquirer) {
-        acquirer = company.charAt(0).toUpperCase() + company.slice(1);
-      } else if (!target) {
-        target = company.charAt(0).toUpperCase() + company.slice(1);
-        break;
+  // Extract company names from title by looking for patterns
+  // Pattern 1: "Company A acquires/buys Company B"
+  const acquirePatterns = [
+    /([A-Z][A-Za-z\s&-]*?)\s+(?:acquires?|buys?|to (?:acquire|buy)|agreed to acquire)\s+([A-Z][A-Za-z\s&-]*?)(?:\s+(?:for|in|at)|\s+$|,)/i,
+    /([A-Z][A-Za-z\s&-]*?)\s+to (?:buy|acquire)\s+([A-Z][A-Za-z\s&-]*?)(?:\s+for|\s+$|,)/i,
+    /([A-Z][A-Za-z\s&-]*?)\s+(?:and|buys)\s+([A-Z][A-Za-z\s&-]*?)(?:\s+in|\s+$|,)/i
+  ];
+  
+  for (const pattern of acquirePatterns) {
+    const match = title.match(pattern);
+    if (match && match[1] && match[2]) {
+      acquirer = match[1].trim();
+      target = match[2].trim();
+      console.log(`[news-proxy] Extracted from title pattern: "${acquirer}" acquires "${target}"`);
+      break;
+    }
+  }
+  
+  // Pattern 2: If pattern matching didn't work, find any pharma companies
+  if (!acquirer || !target) {
+    const foundCompanies = [];
+    for (const company of pharmaCompanies) {
+      const regex = new RegExp(`\\b${company}\\b`, 'i');
+      if (regex.test(titleLower)) {
+        // Capitalize properly
+        const titleMatch = title.match(regex);
+        if (titleMatch) {
+          foundCompanies.push(titleMatch[0]);
+        }
+      }
+    }
+    
+    if (foundCompanies.length >= 2) {
+      acquirer = foundCompanies[0];
+      target = foundCompanies[1];
+      console.log(`[news-proxy] Extracted from company list: "${acquirer}" and "${target}"`);
+    } else if (foundCompanies.length === 1) {
+      acquirer = foundCompanies[0];
+      // Try to extract target as a capitalized word after key deal words
+      const targetMatch = title.match(/(?:acquires?|buys?|partners?|merge|deal|invest)\s+([A-Z][A-Za-z0-9\s&-]*?)(?:\s+(?:for|at|in)|$|,)/i);
+      if (targetMatch && targetMatch[1]) {
+        target = targetMatch[1].trim();
+      }
+    }
+  }
+  
+  // As last resort, extract any capitalized names from title
+  if (!acquirer || acquirer === 'Unnamed Company') {
+    const words = title.split(/[\s,]+/);
+    const capitalizedWords = words.filter(w => /^[A-Z][a-z]/.test(w) && w.length > 2);
+    if (capitalizedWords.length > 0) {
+      acquirer = capitalizedWords[0];
+      if (capitalizedWords.length > 1) {
+        target = capitalizedWords[1];
       }
     }
   }
   
   // Extract deal type
   let dealType = 'Acquisition';
-  if (title.includes('merge')) dealType = 'Merger';
-  else if (title.includes('partner')) dealType = 'Partnership';
-  else if (title.includes('license')) dealType = 'Licensing';
-  else if (title.includes('joint venture')) dealType = 'Joint Venture';
+  if (titleLower.includes('merge')) dealType = 'Merger';
+  else if (titleLower.includes('partner')) dealType = 'Partnership';
+  else if (titleLower.includes('license')) dealType = 'Licensing';
+  else if (titleLower.includes('joint venture')) dealType = 'Joint Venture';
+  else if (titleLower.includes('invest')) dealType = 'Investment';
+  else if (titleLower.includes('fda') || titleLower.includes('approval')) dealType = 'Regulatory Approval';
   
+  console.log(`[news-proxy] Deal info - Acquirer: "${acquirer}", Target: "${target}", Type: "${dealType}"`);
+  
+
   return {
     acquirer: acquirer || 'Unnamed Company',
     target: target || 'Unnamed Target',
