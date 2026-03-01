@@ -123,103 +123,66 @@ const MOCK_DEALS = [
 ];
 
 /**
- * Fetch and parse Google News RSS feed
+ * Fetch and parse Google News RSS feed via Netlify backend
  * @param {string} searchQuery - Search query for news
  * @returns {Promise<Array>} - Array of deal objects
  */
 export async function fetchGoogleNewsRSS(searchQuery) {
   try {
-    const rssUrl = `${GOOGLE_NEWS_RSS}?q=${encodeURIComponent(searchQuery)}`;
+    // Use Netlify function for server-side fetching (no CORS issues)
+    const netlifyApiUrl = process.env.NODE_ENV === 'production' 
+      ? '/.netlify/functions/news-proxy'
+      : 'http://localhost:5174/.netlify/functions/news-proxy';
     
-    console.log('Fetching from Google News RSS:', rssUrl);
+    const url = `${netlifyApiUrl}?query=${encodeURIComponent(searchQuery)}`;
     
-    // Try multiple CORS proxies - ordered by reliability
-    const proxies = [
-      // Primary proxies (most reliable)
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`,
-      `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(rssUrl)}`,
-      `https://thingproxy.freeboard.io/fetch/${rssUrl}`,
-      `https://cors-anywhere.herokuapp.com/${rssUrl}`,
-    ];
+    console.log('Fetching from Netlify backend:', url);
     
-    let lastError = null;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
     
-    for (const corsUrl of proxies) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-        
-        console.log(`Trying proxy: ${corsUrl.substring(0, 60)}...`);
-        
-        const response = await fetch(corsUrl, {
-          signal: controller.signal,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-          }
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-          lastError = new Error(`HTTP error! status: ${response.status}`);
-          continue;
-        }
-        
-        let xmlString;
-        const contentType = response.headers.get('content-type') || '';
-        
-        if (corsUrl.includes('allorigins') || corsUrl.includes('thingproxy')) {
-          // These return plain text
-          xmlString = await response.text();
-        } else if (corsUrl.includes('codetabs')) {
-          // codetabs returns JSON with contents property
-          try {
-            const data = await response.json();
-            xmlString = data.contents || data;
-          } catch {
-            xmlString = await response.text();
-          }
-        } else {
-          // Others return XML/text directly
-          xmlString = await response.text();
-        }
-        
-        // Validate XML before parsing
-        if (!xmlString || xmlString.length < 100) {
-          lastError = new Error('Invalid or empty response');
-          continue;
-        }
-        
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
-        
-        if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
-          lastError = new Error('Failed to parse RSS feed');
-          continue;
-        }
-        
-        const deals = parseRSSItems(xmlDoc);
-        console.log('Successfully fetched', deals.length, 'deals from Google News RSS');
-        
-        // Return deals if we got any
-        if (deals.length > 0) {
-          return deals;
-        }
-        
-        lastError = new Error('No deals parsed from RSS feed');
-      } catch (proxyError) {
-        lastError = proxyError;
-        console.warn(`Proxy failed:`, proxyError.message);
-        continue;
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json'
       }
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`Backend error: ${response.status}`);
     }
     
-    // If all proxies fail, use mock data
-    throw lastError || new Error('All CORS proxies failed');
+    const data = await response.json();
+    
+    if (!data.items || data.items.length === 0) {
+      console.log('No deals from backend, falling back to mock data');
+      return getMockDeals(8);
+    }
+    
+    // Convert backend items to our format
+    const deals = data.items.map(item => ({
+      acquirer: item.acquirer || 'Unnamed Company',
+      target: item.target || 'Unnamed Target',
+      summary: item.description || item.title,
+      source: item.source || 'Google News',
+      sourceUrl: item.link || '#',
+      date: formatDate(item.pubDate),
+      reliability: 3,
+      geography: item.geography || 'Global',
+      continent: item.continent || 'Global',
+      country: item.country || 'Global',
+      dealType: item.dealType || 'Acquisition',
+      value: item.value || ''
+    }));
+    
+    console.log(`Successfully fetched ${deals.length} deals from backend`);
+    return deals;
+    
   } catch (error) {
-    console.error('Google News RSS Error:', error);
+    console.error('Backend fetch error:', error);
     console.log('Falling back to mock data');
-    // Return mock data if RSS fetch fails
     return getMockDeals(8);
   }
 }

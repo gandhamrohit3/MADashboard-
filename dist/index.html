@@ -264,14 +264,15 @@
 
     .filter-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 1.5rem;
       margin-bottom: 1.5rem;
+      max-width: 400px;
     }
 
     @media (max-width: 1400px) {
       .filter-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
       }
     }
 
@@ -703,7 +704,7 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="/assets/index-BDrO9yc7.js"></script>
+  <script type="module" crossorigin src="/assets/index-DNWGlAJl.js"></script>
 </head>
 
 <body>
@@ -802,6 +803,21 @@
       </div>
     </div>
 
+    <!-- Pie Chart Section -->
+    <div style="margin-bottom: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+      <!-- Deal Distribution Chart -->
+      <div style="padding: 1.5rem; background: var(--md-sys-color-surface-container-low); border-radius: 12px; border: 1px solid var(--md-sys-color-outline-variant);">
+        <div style="font-size: 0.95rem; font-weight: 500; margin-bottom: 1.5rem; color: var(--md-sys-color-on-surface);">Deal Distribution</div>
+        <canvas id="dealChart" style="max-height: 300px;"></canvas>
+      </div>
+      
+      <!-- Geographical Distribution Chart -->
+      <div style="padding: 1.5rem; background: var(--md-sys-color-surface-container-low); border-radius: 12px; border: 1px solid var(--md-sys-color-outline-variant);">
+        <div style="font-size: 0.95rem; font-weight: 500; margin-bottom: 1.5rem; color: var(--md-sys-color-on-surface);">Geographical Split</div>
+        <canvas id="geoChart" style="max-height: 300px;"></canvas>
+      </div>
+    </div>
+
     <!-- Filter Panel -->
     <div class="filter-panel">
       <div class="filter-panel-header">
@@ -809,14 +825,6 @@
         Filter Intelligence
       </div>
       <div class="filter-grid">
-        <div class="filter-field">
-          <label class="filter-label">Date Range</label>
-          <div style="display: flex; gap: 0.5rem; align-items: center;">
-            <input id="dateFrom" type="date" style="flex: 1; padding: 0.75rem; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 6px; background: var(--md-sys-color-surface-container-low); color: var(--md-sys-color-on-background); font-family: inherit; font-size: 0.9rem;">
-            <span style="color: var(--md-sys-color-on-surface-variant);">→</span>
-            <input id="dateTo" type="date" style="flex: 1; padding: 0.75rem; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 6px; background: var(--md-sys-color-surface-container-low); color: var(--md-sys-color-on-background); font-family: inherit; font-size: 0.9rem;">
-          </div>
-        </div>
         <div class="filter-field">
           <label class="filter-label">Geography</label>
           <md-outlined-select id="geoFilter">
@@ -839,6 +847,14 @@
             <md-select-option value="Divestiture"><div slot="headline">Divestiture</div></md-select-option>
           </md-outlined-select>
         </div>
+        <div class="filter-field">
+          <label class="filter-label">Date Range</label>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <input id="dateFrom" type="date" style="flex: 1; padding: 0.75rem; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 6px; background: var(--md-sys-color-surface-container-low); color: var(--md-sys-color-on-background); font-family: inherit; font-size: 0.9rem;">
+            <span style="color: var(--md-sys-color-on-surface-variant);">→</span>
+            <input id="dateTo" type="date" style="flex: 1; padding: 0.75rem; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 6px; background: var(--md-sys-color-surface-container-low); color: var(--md-sys-color-on-background); font-family: inherit; font-size: 0.9rem;">
+          </div>
+        </div>
       </div>
       <div class="filter-field" style="margin-bottom: 1.5rem;">
         <label class="filter-label">Search Keywords</label>
@@ -849,21 +865,6 @@
           <md-icon slot="icon">search</md-icon>
           Search
         </md-elevated-button>
-      </div>
-    </div>
-
-    <!-- Pie Chart Section -->
-    <div style="margin-bottom: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-      <!-- Deal Distribution Chart -->
-      <div style="padding: 1.5rem; background: var(--md-sys-color-surface-container-low); border-radius: 12px; border: 1px solid var(--md-sys-color-outline-variant);">
-        <div style="font-size: 0.95rem; font-weight: 500; margin-bottom: 1.5rem; color: var(--md-sys-color-on-surface);">Deal Distribution</div>
-        <canvas id="dealChart" style="max-height: 300px;"></canvas>
-      </div>
-      
-      <!-- Geographical Distribution Chart -->
-      <div style="padding: 1.5rem; background: var(--md-sys-color-surface-container-low); border-radius: 12px; border: 1px solid var(--md-sys-color-outline-variant);">
-        <div style="font-size: 0.95rem; font-weight: 500; margin-bottom: 1.5rem; color: var(--md-sys-color-on-surface);">Geographical Split</div>
-        <canvas id="geoChart" style="max-height: 300px;"></canvas>
       </div>
     </div>
 
