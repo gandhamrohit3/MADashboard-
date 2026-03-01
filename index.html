@@ -334,14 +334,22 @@
     }
 
     md-filled-button {
-      --md-filled-button-container-height: 44px;
+      --md-filled-button-container-height: 40px;
       --md-filled-button-label-text-size: 1rem;
       --md-filled-button-container-color: var(--md-sys-color-primary);
       --md-filled-button-label-text-color: var(--md-sys-color-on-primary);
     }
 
     md-filled-button::part(button) {
-      padding: 0 24px !important;
+      padding: 0 20px !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    md-icon {
+      font-size: 20px !important;
     }
 
     [data-theme="dark"] md-filled-button {
