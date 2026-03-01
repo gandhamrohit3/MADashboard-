@@ -308,7 +308,9 @@ window.renderDeal = function (deal, type) {
     </div>
     <div class="deal-summary">${deal.summary || ''}</div>
     ${rel}
-    ${deal.source ? `<div class="deal-source"><span class="material-symbols-outlined source-icon">link</span> Source: <a href="${deal.sourceUrl || '#'}" target="_blank">${deal.source}</a></div>` : ''}
+    <div class="deal-footer">
+      ${deal.source ? `<div class="deal-source"><span class="material-symbols-outlined source-icon">link</span><span class="source-text">Source: <a href="${deal.sourceUrl || '#'}" target="_blank">${deal.source}</a></span></div>` : ''}
+    </div>
   </div>`;
 }
 
