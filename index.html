@@ -803,6 +803,21 @@
       </div>
     </div>
 
+    <!-- Pie Chart Section -->
+    <div style="margin-bottom: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+      <!-- Deal Distribution Chart -->
+      <div style="padding: 1.5rem; background: var(--md-sys-color-surface-container-low); border-radius: 12px; border: 1px solid var(--md-sys-color-outline-variant);">
+        <div style="font-size: 0.95rem; font-weight: 500; margin-bottom: 1.5rem; color: var(--md-sys-color-on-surface);">Deal Distribution</div>
+        <canvas id="dealChart" style="max-height: 300px;"></canvas>
+      </div>
+      
+      <!-- Geographical Distribution Chart -->
+      <div style="padding: 1.5rem; background: var(--md-sys-color-surface-container-low); border-radius: 12px; border: 1px solid var(--md-sys-color-outline-variant);">
+        <div style="font-size: 0.95rem; font-weight: 500; margin-bottom: 1.5rem; color: var(--md-sys-color-on-surface);">Geographical Split</div>
+        <canvas id="geoChart" style="max-height: 300px;"></canvas>
+      </div>
+    </div>
+
     <!-- Filter Panel -->
     <div class="filter-panel">
       <div class="filter-panel-header">
@@ -850,21 +865,6 @@
           <md-icon slot="icon">search</md-icon>
           Search
         </md-elevated-button>
-      </div>
-    </div>
-
-    <!-- Pie Chart Section -->
-    <div style="margin-bottom: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-      <!-- Deal Distribution Chart -->
-      <div style="padding: 1.5rem; background: var(--md-sys-color-surface-container-low); border-radius: 12px; border: 1px solid var(--md-sys-color-outline-variant);">
-        <div style="font-size: 0.95rem; font-weight: 500; margin-bottom: 1.5rem; color: var(--md-sys-color-on-surface);">Deal Distribution</div>
-        <canvas id="dealChart" style="max-height: 300px;"></canvas>
-      </div>
-      
-      <!-- Geographical Distribution Chart -->
-      <div style="padding: 1.5rem; background: var(--md-sys-color-surface-container-low); border-radius: 12px; border: 1px solid var(--md-sys-color-outline-variant);">
-        <div style="font-size: 0.95rem; font-weight: 500; margin-bottom: 1.5rem; color: var(--md-sys-color-on-surface);">Geographical Split</div>
-        <canvas id="geoChart" style="max-height: 300px;"></canvas>
       </div>
     </div>
 
