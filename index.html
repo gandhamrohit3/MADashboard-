@@ -229,6 +229,14 @@
 
     .page-header {
       margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+    }
+
+    .page-title {
+      flex: 1;
     }
 
     .page-title h1 {
@@ -241,6 +249,12 @@
     .page-title p {
       font-size: 0.95rem;
       color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .page-header-action {
+      display: flex;
+      align-items: flex-start;
+      white-space: nowrap;
     }
 
     /* Filter Panel */
@@ -773,14 +787,12 @@
         <h1>M&A Intelligence Monitor</h1>
         <p>Track pharmaceutical & life sciences deals globally with AI-powered insights</p>
       </div>
-    </div>
-
-    <!-- Generate Dashboard Button -->
-    <div style="display: flex; justify-content: flex-start; margin-bottom: 2rem;">
-      <md-text-button onclick="window.fetchDeals()">
-        <md-icon slot="icon">dashboard_customize</md-icon>
-        Generate Dashboard
-      </md-text-button>
+      <div class="page-header-action">
+        <md-elevated-button onclick="window.fetchDeals()" style="margin-bottom: 0.5rem;">
+          <md-icon slot="icon">dashboard_customize</md-icon>
+          Generate Dashboard
+        </md-elevated-button>
+      </div>
     </div>
 
     <!-- Metrics Grid -->
