@@ -265,14 +265,15 @@
 
     .filter-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 1.5rem;
       margin-bottom: 1.5rem;
+      max-width: 400px;
     }
 
     @media (max-width: 1400px) {
       .filter-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
       }
     }
 
@@ -810,14 +811,6 @@
       </div>
       <div class="filter-grid">
         <div class="filter-field">
-          <label class="filter-label">Date Range</label>
-          <div style="display: flex; gap: 0.5rem; align-items: center;">
-            <input id="dateFrom" type="date" style="flex: 1; padding: 0.75rem; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 6px; background: var(--md-sys-color-surface-container-low); color: var(--md-sys-color-on-background); font-family: inherit; font-size: 0.9rem;">
-            <span style="color: var(--md-sys-color-on-surface-variant);">→</span>
-            <input id="dateTo" type="date" style="flex: 1; padding: 0.75rem; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 6px; background: var(--md-sys-color-surface-container-low); color: var(--md-sys-color-on-background); font-family: inherit; font-size: 0.9rem;">
-          </div>
-        </div>
-        <div class="filter-field">
           <label class="filter-label">Geography</label>
           <md-outlined-select id="geoFilter">
             <md-select-option value="all"><div slot="headline">All Regions</div></md-select-option>
@@ -838,6 +831,14 @@
             <md-select-option value="Licensing"><div slot="headline">Licensing / In-licensing</div></md-select-option>
             <md-select-option value="Divestiture"><div slot="headline">Divestiture</div></md-select-option>
           </md-outlined-select>
+        </div>
+        <div class="filter-field">
+          <label class="filter-label">Date Range</label>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <input id="dateFrom" type="date" style="flex: 1; padding: 0.75rem; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 6px; background: var(--md-sys-color-surface-container-low); color: var(--md-sys-color-on-background); font-family: inherit; font-size: 0.9rem;">
+            <span style="color: var(--md-sys-color-on-surface-variant);">→</span>
+            <input id="dateTo" type="date" style="flex: 1; padding: 0.75rem; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 6px; background: var(--md-sys-color-surface-container-low); color: var(--md-sys-color-on-background); font-family: inherit; font-size: 0.9rem;">
+          </div>
         </div>
       </div>
       <div class="filter-field" style="margin-bottom: 1.5rem;">
