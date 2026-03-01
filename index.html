@@ -229,14 +229,6 @@
 
     .page-header {
       margin-bottom: 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 2rem;
-    }
-
-    .page-title {
-      flex: 1;
     }
 
     .page-title h1 {
@@ -249,12 +241,6 @@
     .page-title p {
       font-size: 0.95rem;
       color: var(--md-sys-color-on-surface-variant);
-    }
-
-    .page-header-action {
-      display: flex;
-      align-items: center;
-      white-space: nowrap;
     }
 
     /* Filter Panel */
@@ -331,30 +317,6 @@
     [data-theme="dark"] md-elevated-button {
       --md-elevated-button-container-color: var(--md-sys-color-primary);
       --md-elevated-button-label-text-color: var(--md-sys-color-on-primary);
-    }
-
-    md-filled-button {
-      --md-filled-button-container-height: 40px;
-      --md-filled-button-label-text-size: 1rem;
-      --md-filled-button-container-color: var(--md-sys-color-primary);
-      --md-filled-button-label-text-color: var(--md-sys-color-on-primary);
-    }
-
-    md-filled-button::part(button) {
-      padding: 0 20px !important;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    md-icon {
-      font-size: 20px !important;
-    }
-
-    [data-theme="dark"] md-filled-button {
-      --md-filled-button-container-color: var(--md-sys-color-primary);
-      --md-filled-button-label-text-color: var(--md-sys-color-on-primary);
     }
 
     /* Metrics */
@@ -811,12 +773,14 @@
         <h1>M&A Intelligence Monitor</h1>
         <p>Track pharmaceutical & life sciences deals globally with AI-powered insights</p>
       </div>
-      <div class="page-header-action">
-        <md-filled-button onclick="window.fetchDeals()">
-          <md-icon slot="icon">dashboard_customize</md-icon>
-          Generate Dashboard
-        </md-filled-button>
-      </div>
+    </div>
+
+    <!-- Generate Dashboard Button -->
+    <div style="display: flex; justify-content: flex-start; margin-bottom: 2rem;">
+      <md-text-button onclick="window.fetchDeals()">
+        <md-icon slot="icon">dashboard_customize</md-icon>
+        Generate Dashboard
+      </md-text-button>
     </div>
 
     <!-- Metrics Grid -->
