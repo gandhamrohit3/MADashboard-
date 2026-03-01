@@ -383,25 +383,41 @@ window.fetchDeals = async function () {
     // Extract and update geographical distribution
     const allDeals = [...confirmed, ...rumors];
     const geoCount = {};
+    const continentCount = {};
+    
     allDeals.forEach(deal => {
-      if (deal.geography) {
+      // Count by full geography (country + continent)
+      if (deal.geography && deal.geography !== 'Global') {
         geoCount[deal.geography] = (geoCount[deal.geography] || 0) + 1;
       }
+      
+      // Also count by continent
+      const continent = deal.continent || 'Global';
+      continentCount[continent] = (continentCount[continent] || 0) + 1;
     });
 
-    // Sort by count and take top 5
-    const topGeos = Object.entries(geoCount)
+    // Prepare data for geographical chart - use continent breakdown
+    let geoChartData = {};
+    if (Object.keys(continentCount).length > 0 && Object.keys(continentCount)[0] !== 'Global') {
+      geoChartData = continentCount;
+    } else {
+      // Fallback to full geography if no continent data
+      geoChartData = geoCount;
+    }
+
+    // Sort by count and take top 6
+    const topGeos = Object.entries(geoChartData)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
+      .slice(0, 6)
       .reduce((acc, [geo, count]) => {
         acc[geo] = count;
         return acc;
       }, {});
 
-    // Add "Other" category if there are more than 5
-    if (Object.entries(geoCount).length > 5) {
-      const otherCount = Object.entries(geoCount)
-        .slice(5)
+    // Add "Other" category if there are more than 6
+    if (Object.entries(geoChartData).length > 6) {
+      const otherCount = Object.entries(geoChartData)
+        .slice(6)
         .reduce((sum, [, count]) => sum + count, 0);
       topGeos['Other'] = otherCount;
     }

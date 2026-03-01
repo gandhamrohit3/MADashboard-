@@ -16,7 +16,9 @@ const MOCK_DEALS = [
     sourceUrl: 'https://www.reuters.com',
     date: 'Feb 20, 2026',
     reliability: 5,
-    geography: 'Global',
+    geography: 'North America (USA)',
+    continent: 'North America',
+    country: 'USA',
     dealType: 'Acquisition',
     value: '$43.0B'
   },
@@ -28,7 +30,9 @@ const MOCK_DEALS = [
     sourceUrl: 'https://www.bloomberg.com',
     date: 'Feb 18, 2026',
     reliability: 4,
-    geography: 'Global',
+    geography: 'North America (USA)',
+    continent: 'North America',
+    country: 'USA',
     dealType: 'Acquisition',
     value: '$14.6B'
   },
@@ -40,7 +44,9 @@ const MOCK_DEALS = [
     sourceUrl: 'https://finance.yahoo.com',
     date: 'Feb 15, 2026',
     reliability: 4,
-    geography: 'Global',
+    geography: 'North America (USA)',
+    continent: 'North America',
+    country: 'USA',
     dealType: 'Acquisition',
     value: '$3.2B'
   },
@@ -52,7 +58,9 @@ const MOCK_DEALS = [
     sourceUrl: 'https://www.cnbc.com',
     date: 'Feb 12, 2026',
     reliability: 3,
-    geography: 'Global',
+    geography: 'Europe (Switzerland)',
+    continent: 'Europe',
+    country: 'Switzerland',
     dealType: 'Acquisition',
     value: 'Undisclosed'
   },
@@ -64,9 +72,53 @@ const MOCK_DEALS = [
     sourceUrl: 'https://www.statnews.com',
     date: 'Feb 10, 2026',
     reliability: 2,
-    geography: 'Global',
+    geography: 'North America (USA)',
+    continent: 'North America',
+    country: 'USA',
     dealType: 'Acquisition',
     value: ''
+  },
+  {
+    acquirer: 'Novartis',
+    target: 'MorphoSys AG',
+    summary: 'Novartis to acquire MorphoSys AG for €2.7 billion, strengthening cancer research capabilities.',
+    source: 'Reuters',
+    sourceUrl: 'https://www.reuters.com',
+    date: 'Feb 8, 2026',
+    reliability: 5,
+    geography: 'Europe (Germany)',
+    continent: 'Europe',
+    country: 'Germany',
+    dealType: 'Acquisition',
+    value: '€2.7B'
+  },
+  {
+    acquirer: 'Takeda',
+    target: 'ChiRex Inc',
+    summary: 'Takeda Pharmaceutical acquires ChiRex for $645 million to enhance rare disease portfolio.',
+    source: 'Japan Times',
+    sourceUrl: 'https://www.japantimes.co.jp',
+    date: 'Feb 5, 2026',
+    reliability: 4,
+    geography: 'Asia Pacific (Japan)',
+    continent: 'Asia Pacific',
+    country: 'Japan',
+    dealType: 'Acquisition',
+    value: '$645M'
+  },
+  {
+    acquirer: 'AstraZeneca',
+    target: 'Kura Oncology',
+    summary: 'AstraZeneca to acquire Kura Oncology for $534 million, adding oncology therapies.',
+    source: 'Financial Times',
+    sourceUrl: 'https://www.ft.com',
+    date: 'Feb 1, 2026',
+    reliability: 4,
+    geography: 'Europe (UK)',
+    continent: 'Europe',
+    country: 'United Kingdom',
+    dealType: 'Acquisition',
+    value: '$534M'
   }
 ];
 
@@ -206,6 +258,9 @@ function parseArticleToDeal(title, description, link, pubDate) {
   // Try to extract company names from title
   const companies = extractCompanyNames(title);
   
+  // Extract geographical information
+  const geo = extractGeography(title + ' ' + cleanDesc);
+  
   return {
     acquirer: companies.acquirer || 'Unnamed Company',
     target: companies.target || 'Unnamed Target',
@@ -214,9 +269,74 @@ function parseArticleToDeal(title, description, link, pubDate) {
     sourceUrl: link,
     date: formatDate(pubDate),
     reliability: Math.floor(Math.random() * 3) + 2,
-    geography: 'Global',
+    geography: geo.geography || 'Global',
+    continent: geo.continent || 'Global',
+    country: geo.country || 'Global',
     dealType: extractDealType(title),
     value: extractDealValue(description) || ''
+  };
+}
+
+/**
+ * Extract geographical information from article text
+ * @param {string} text - Article title and description
+ * @returns {Object} - { geography, continent, country }
+ */
+function extractGeography(text) {
+  const continentMap = {
+    'North America': ['USA', 'US', 'Canada', 'Mexico', 'American', 'Canadian'],
+    'Europe': ['UK', 'Switzerland', 'Germany', 'France', 'Italy', 'Sweden', 'Netherlands', 'Belgium', 'Austria', 'European'],
+    'Asia Pacific': ['Japan', 'China', 'India', 'Australia', 'Singapore', 'South Korea', 'Asian', 'Australian'],
+    'Latin America': ['Brazil', 'Argentina', 'Chile', 'Mexico', 'Latin'],
+    'Middle East': ['Israel', 'UAE', 'Saudi', 'Qatar', 'Turkish', 'Middle Eastern'],
+    'Africa': ['South Africa', 'Nigeria', 'Kenya', 'African']
+  };
+
+  const countryKeywords = {
+    'USA': ['USA', 'United States', 'America', 'American'],
+    'UK': ['UK', 'United Kingdom', 'Britain', 'British'],
+    'Canada': ['Canada', 'Canadian'],
+    'Switzerland': ['Switzerland', 'Swiss'],
+    'Germany': ['Germany', 'German'],
+    'France': ['France', 'French'],
+    'Japan': ['Japan', 'Japanese'],
+    'China': ['China', 'Chinese'],
+    'Australia': ['Australia', 'Australian'],
+    'India': ['India', 'Indian'],
+    'Brazil': ['Brazil', 'Brazilian'],
+    'Israel': ['Israel', 'Israeli']
+  };
+
+  // Search for country mentions
+  let detectedCountry = null;
+  for (const [country, keywords] of Object.entries(countryKeywords)) {
+    for (const keyword of keywords) {
+      if (new RegExp(`\\b${keyword}\\b`, 'i').test(text)) {
+        detectedCountry = country;
+        break;
+      }
+    }
+    if (detectedCountry) break;
+  }
+
+  // Find continent based on detected country
+  let detectedContinent = null;
+  if (detectedCountry) {
+    for (const [continent, countries] of Object.entries(continentMap)) {
+      if (countries.some(c => c.toLowerCase().includes(detectedCountry.toLowerCase()) || detectedCountry.toLowerCase().includes(c.toLowerCase()))) {
+        detectedContinent = continent;
+        break;
+      }
+    }
+  }
+
+  // Format geography string
+  const geography = detectedCountry && detectedContinent ? `${detectedContinent} (${detectedCountry})` : 'Global';
+
+  return {
+    geography,
+    continent: detectedContinent || 'Global',
+    country: detectedCountry || 'Global'
   };
 }
 
